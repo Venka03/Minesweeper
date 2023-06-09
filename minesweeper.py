@@ -62,7 +62,7 @@ def hint(board):
     board[x][y]['flagged'] = True
 
 
-def print_board(board):
+def print_board(board, lost=False):
     """
     output to console board with coordinates
     """
@@ -95,7 +95,11 @@ def print_board(board):
             elif board[i][j]['flagged']:
                 print('F', end=' ')
             else:
-                print('X', end=' ')
+                if lost and board[i][j]['value'] == '*':
+                    print('*', end=' ')
+                else:
+                    print('X', end=' ')
+                    
         print()
 
 
@@ -108,6 +112,19 @@ def get_coordinates():
         print("Introduce two variables")
         coordinates = input("Write coordinates of cell: ").split()
     return int(coordinates[0]), int(coordinates[1])
+
+
+def all_opened(board):
+    """
+    check if all cells except for ones with bombs were opened
+    """
+    c = 0
+    for i in range(HEIGHT):
+        for j in range(WIDTH):
+            if (board[i][j]["open"]):
+                c += 1
+    state = c == HEIGHT * WIDTH - BOMB_NUM
+    return state
 
 
 def game_play(board):
@@ -142,13 +159,15 @@ def game_play(board):
 
         print(f"There are {BOMB_NUM - len(FLAGGED)} flags left")
 
-        if MINES == FLAGGED:
+        if MINES == FLAGGED or all_opened(board):
             won = True
 
-    print_board(board)
+    
     if won:
+        print_board(board)
         print("You won")
     else:
+        print_board(board, lost=True)
         print("You lose")
 
 
@@ -191,10 +210,6 @@ def create_board():
         BOMB_NUM = 99
 
     board = [[{'value': 0, 'open': False, 'flagged': False} for i in range(WIDTH)] for j in range(HEIGHT)]
-    for i in range(HEIGHT):
-        for j in range(WIDTH):
-            board[i][j] = {'value': 0, 'open': False, 'flagged': False}
-
     MINES = set()  # set of locations of bombs
     while len(MINES) < BOMB_NUM:
         x = random.randint(0, HEIGHT - 1)
@@ -232,7 +247,7 @@ def game():
         case 'b':
             level = 'beginner'
 
-    if FLAGGED == MINES:
+    if FLAGGED == MINES or all_opened:
         with open('record.txt', 'a') as f:
             text = f"{name} {level} {time_spent}\n"
             f.write(text)
@@ -241,4 +256,4 @@ def game():
 try:
     game() # run the function game which is responsible for execution of program
 except BaseException:
-    print('Something unexpected happened, try to start game from the beginning')
+    print('\nSomething unexpected happened, try to start game from the beginning')

@@ -239,6 +239,6 @@ def game():
 
 
 try:
-    game()
+    game() # run the function game which is responsible for execution of program
 except BaseException:
     print('Something unexpected happened, try to start game from the beginning')

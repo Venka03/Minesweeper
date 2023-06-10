@@ -31,7 +31,7 @@ def open_space(board, x: int, y: int):
         for a in range(x - 1, x + 2):
             for b in range(y - 1, y + 2):
                 if 0 <= a < HEIGHT and 0 <= b < WIDTH:  # check if cell is not out of board
-                    if not (board[a][b]["value"] == "*" or board[a][b]['open']):
+                    if not (board[a][b]["value"] == "*" or board[a][b]['open'] or board[a][b]['flagged']):
                         open_space(board, a, b)
 
 
@@ -40,14 +40,18 @@ def flag_cell(board, x: int, y: int):
     flag cell if it is not flagged and unflag cell if it is flagged
     add/delete coordinated of flagged/unflagged cell
     """
+
     if board[x][y]["open"]:
         print(f"It is not possible to flag cell ({x}, {y}) because it is opened ")
     elif board[x][y]["flagged"]:
         board[x][y]["flagged"] = False
         FLAGGED.remove((x, y))
     else:
-        board[x][y]["flagged"] = True
-        FLAGGED.add((x, y))
+        if len(FLAGGED) < BOMB_NUM:
+            board[x][y]["flagged"] = True
+            FLAGGED.add((x, y))
+        else:
+            print(f"It is not possible to flag cell ({x}, {y}) because you have already flagged {BOMB_NUM} cells")
 
 
 def hint(board):
@@ -247,6 +251,7 @@ def game():
         case 'b':
             level = 'beginner'
 
+    # think about it
     if FLAGGED == MINES or all_opened:
         with open('record.txt', 'a') as f:
             text = f"{name} {level} {time_spent}\n"

@@ -45,11 +45,11 @@ def flag_cell(board, x: int, y: int):
         print(f"It is not possible to flag cell ({x}, {y}) because it is opened ")
     elif board[x][y]["flagged"]:
         board[x][y]["flagged"] = False
-        FLAGGED.remove((x, y))
+        flagged.remove((x, y))
     else:
-        if len(FLAGGED) < BOMB_NUM:
+        if len(flagged) < BOMB_NUM:
             board[x][y]["flagged"] = True
-            FLAGGED.add((x, y))
+            flagged.add((x, y))
         else:
             print(f"It is not possible to flag cell ({x}, {y}) because you have already flagged {BOMB_NUM} cells")
 
@@ -58,10 +58,10 @@ def hint(board):
     """
     give user hint where is a bomb and automatically flag it
     """
-    not_found = MINES.difference(FLAGGED)  # so we do not give a hint(cell with bomb) what is already flagged
+    not_found = MINES.difference(flagged)  # so we do not give a hint(cell with bomb) what is already flagged
     bomb = random.choice(list(not_found))
     print(f"Bomb is located at position {bomb}")
-    FLAGGED.add(bomb)
+    flagged.add(bomb)
     x, y = bomb
     board[x][y]['flagged'] = True
 
@@ -140,6 +140,7 @@ def game_play(board):
     global GAME_OVER
     GAME_OVER = False
     won = False
+    hints_used = 0
 
     while not (GAME_OVER or won):
         print_board(board)
@@ -147,9 +148,13 @@ def game_play(board):
         while action not in ['o', 'f', 'h']:
             print(f"There is no such option as {action}")
             action = input("open - o, flag - f, hint - h: ")
-
+        
         if action == "h":
-            hint(board)
+            if hints_used == HINTS:
+                print("There are no more hints")
+            else:
+                hint(board)
+                hints_used += 1
         else:
             x, y = get_coordinates()
             while x >= HEIGHT or x < 0 or y < 0 or y > WIDTH:
@@ -161,9 +166,10 @@ def game_play(board):
             else:
                 open_cell(board, x, y)
 
-        print(f"There are {BOMB_NUM - len(FLAGGED)} flags left")
+        print(f"There are {BOMB_NUM - len(flagged)} flags left")
+        print(f"There are {HINTS - hints_used} hints left")
 
-        if MINES == FLAGGED or all_opened(board):
+        if MINES == flagged or all_opened(board):
             won = True
 
     
@@ -194,7 +200,7 @@ def create_board():
     plant bombs
     return finished board
     """
-    global MINES, WIDTH, HEIGHT, BOMB_NUM, level
+    global MINES, WIDTH, HEIGHT, BOMB_NUM, level, HINTS
 
     level = input("Choose level(beginner - b, intermediate - i, expert - e): ")
     while level not in ['b', 'i', 'e']:
@@ -204,14 +210,17 @@ def create_board():
         WIDTH = 9
         HEIGHT = 9
         BOMB_NUM = 10
+        HINTS = 3
     elif level == 'i':
         WIDTH = 16
         HEIGHT = 16
         BOMB_NUM = 40
+        HINTS = 8
     else:
         WIDTH = 30
         HEIGHT = 16
         BOMB_NUM = 99
+        HINTS = 15
 
     board = [[{'value': 0, 'open': False, 'flagged': False} for i in range(WIDTH)] for j in range(HEIGHT)]
     MINES = set()  # set of locations of bombs
@@ -236,10 +245,10 @@ def game():
     perform all functions(the whole process of game)
     create or append file with data of winners
     """
-    global FLAGGED, level
+    global flagged, level
 
     name = input("What is your username: ")
-    FLAGGED = set()  # set of locations of flagged cells
+    flagged = set()  # set of locations of flagged cells
     board = create_board()
     time_spent = record_time(board)
 
@@ -252,7 +261,7 @@ def game():
             level = 'beginner'
 
     # think about it
-    if FLAGGED == MINES or all_opened:
+    if flagged == MINES or all_opened:
         with open('record.txt', 'a') as f:
             text = f"{name} {level} {time_spent}\n"
             f.write(text)

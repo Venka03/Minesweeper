@@ -4,7 +4,14 @@
 import random
 import tkinter as tk
 from tkinter import messagebox
-from tkmacosx import Button
+import platform
+
+# different Button class is used for greater convenience
+macOS = 'macOS' in platform.platform()
+if macOS:
+    from tkmacosx import Button
+else:
+    from tkinter import Button
 
 WIDTH = 9
 HEIGHT = 9
@@ -85,6 +92,9 @@ def reveal_position(board, won=False):
     if it is bomb and was flagged, it become green
     otherwise red
     if non bomb cell was flagged, it will be red indicating wrong decision
+
+    windows and mac versions uses different button classes
+    windows button does not have disabledbackground, just bg can be used
     """
     for i in range(HEIGHT):
         for j in range(WIDTH):
@@ -92,11 +102,17 @@ def reveal_position(board, won=False):
             if board[i][j].value == '*':
                 board[i][j]['text'] = '*'
                 if board[i][j].flagged or won: # won for case all non bomb cells were opened but still not all bombs are flagged
-                    board[i][j].configure(disabledbackground="green")
+                    color = "green"
+                else: color = "red"
+                if macOS:
+                    board[i][j].configure(disabledbackground=color)
                 else:
+                    board[i][j].configure(bg=color)
+            elif board[i][j].flagged: 
+                if macOS:
                     board[i][j].configure(disabledbackground="red")
-            elif board[i][j].flagged:
-                board[i][j].configure(disabledbackground="red")
+                else:
+                    board[i][j].configure(bg="red")
 
 def bombs_flagged(board):
     """
@@ -120,18 +136,25 @@ def disable_cells(board):
 def create_root():
     """
     create non resizable root window and menu to restart the game
+    windows version is not square since Menu in on the top of window, 
+    so to fit all cell window should have bigger height
     """
     root = tk.Tk()
-    root.geometry("270x270")
+    if macOS:
+        root.geometry("270x270")
+    else:
+        root.geometry("270x290")
     root.resizable(False, False)
     root.configure(bg="#ececec")
     root.title("Minesweeper")
     root.eval("tk::PlaceWindow . center")
+
     my_menu = tk.Menu()
     root.config(menu=my_menu)
     options_menu = tk.Menu(my_menu, tearoff=False)
     my_menu.add_cascade(label='Options', menu=options_menu)
     options_menu.add_command(label="Restart Game", command=lambda:game(root))
+    
     return root
 
 def create_board(root):
@@ -139,8 +162,26 @@ def create_board(root):
     create two-dimensional list of cells (class inherited from Button)
     plant bombs
     return finished board
+
+    version for Windows requires frame underneath the button for it to be square
     """
-    board = [[Cell(j, i, 0, False, False, root, text=' ', font=("Helvetica", 20), height=30, width=30, bg="SystemButtonFace") for i in range(WIDTH)] for j in range(HEIGHT)]
+    
+    board = []
+    for i in range(HEIGHT):
+        row = []
+        for j in range(WIDTH):
+            if macOS:
+                cell = Cell(i, j, 0, False, False, root, text=' ', font=("Helvetica", 20) , width=30, height=30, bg="SystemButtonFace")
+                cell.grid(row=i, column=j)
+            else:
+                frame = tk.Frame(root, width=30, height=30)
+                cell = Cell(i, j, 0, False, False, frame, text=' ', font=("Helvetica", 20) , width=30, height=30, bg="SystemButtonFace")
+                cell.pack()
+                frame.pack_propagate(False)
+                frame.grid(row=i, column=j)
+
+            row.append(cell)
+        board.append(row)
 
     mines = set()  # set of locations of bombs
     while len(mines) < BOMB_NUM:
@@ -175,7 +216,7 @@ def click(event, board):
                 reveal_position(board, won=True)
                 messagebox.showinfo("You won", "You have won the game, congratulations")
                 disable_cells(board)
-    elif event.num == 2:
+    elif event.num == 2 or event.num == 3:
         if not event.widget.open:
             if not event.widget.flagged:
                 event.widget["text"] = 'F'
@@ -192,15 +233,19 @@ def game(root):
     """
     create board
     place buttons on root window
-    define left and right click on button
+    define left and right click on button 
+    on mac and windows right click is Button-2 and -3 respectively
     """
     
     board = create_board(root)
     for i in range(WIDTH):
         for j in range(HEIGHT):
-            board[i][j].grid(row=i, column=j)
             board[i][j].bind("<Button-1>", lambda event: click(event, board))
-            board[i][j].bind("<Button-2>", lambda event: click(event, board))
+            if macOS:
+                board[i][j].bind("<Button-2>", lambda event: click(event, board))
+            else:
+                board[i][j].bind("<Button-3>", lambda event: click(event, board))
+                
     root.mainloop()
             
 

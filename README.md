@@ -6,8 +6,8 @@ User has to open cells and in cell stores information about how many bombs are a
 User loses by opening cell with bomb inside
 User can flag cell in which he/she thinks the bomb is
 User wins if:
-1 - all cells without bomb were opened
-2 - all bombs were flagged
+- all cells without bomb were opened
+- all bombs were flagged
 
 # Console version
 Program asks user for name and level (different size of board and number of bombs)
